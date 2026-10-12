@@ -1,0 +1,12 @@
+{
+  "name": "Minijuegos para Dos",
+  "short_name": "Minijuegos",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1e1b2e",
+  "theme_color": "#1e1b2e",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
