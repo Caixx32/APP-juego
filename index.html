@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mi Auto</title>
+  <meta name="description" content="Controlá el mantenimiento, los gastos y los vencimientos de tu auto.">
+  <meta name="theme-color" content="#1f6feb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Mi Auto">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1 id="title">Mi Auto</h1>
+    <span id="plate" class="plate" hidden></span>
+  </header>
+
+  <div id="storage-warning" class="banner" hidden>
+    No se pueden guardar datos en este navegador (¿modo privado?). Lo que cargues se perderá al cerrar.
+  </div>
+
+  <main id="view"></main>
+
+  <nav class="tabs" aria-label="Secciones">
+    <button data-tab="home" class="active"><span>🏠</span>Inicio</button>
+    <button data-tab="tasks"><span>🔧</span>Service</button>
+    <button data-tab="expenses"><span>💸</span>Gastos</button>
+    <button data-tab="docs"><span>📄</span>Papeles</button>
+    <button data-tab="car"><span>🚗</span>Auto</button>
+  </nav>
+
+  <dialog id="modal">
+    <form id="modal-form" method="dialog">
+      <h2 id="modal-title"></h2>
+      <div id="modal-fields"></div>
+      <div class="modal-actions">
+        <button type="button" id="modal-delete" class="danger" hidden>Eliminar</button>
+        <span class="spacer"></span>
+        <button type="button" id="modal-cancel" class="ghost">Cancelar</button>
+        <button type="submit" class="primary">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <input type="file" id="import-file" accept="application/json,.json" hidden>
+  <script src="app.js"></script>
+</body>
+</html>
