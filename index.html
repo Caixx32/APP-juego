@@ -23,6 +23,28 @@
     No se pueden guardar datos en este navegador (¿modo privado?). Lo que cargues se perderá al cerrar.
   </div>
 
+  <section id="stage" class="stage" aria-label="Tu auto en 3D">
+    <model-viewer id="car3d"
+      camera-controls
+      disable-pan
+      touch-action="pan-y"
+      auto-rotate
+      auto-rotate-delay="2500"
+      rotation-per-second="18deg"
+      interaction-prompt="none"
+      camera-orbit="-35deg 72deg 105%"
+      min-camera-orbit="auto 20deg auto"
+      max-camera-orbit="auto 88deg auto"
+      environment-image="neutral"
+      exposure="1.1"
+      shadow-intensity="1.3"
+      shadow-softness="0.9">
+      <div slot="progress-bar"></div>
+    </model-viewer>
+    <div class="stage-hint">👆 Girá el auto con el dedo · tocá un punto para ver el detalle</div>
+    <div id="spot-info" class="spot-info" hidden></div>
+  </section>
+
   <main id="view"></main>
 
   <nav class="tabs" aria-label="Secciones">
@@ -47,6 +69,8 @@
   </dialog>
 
   <input type="file" id="import-file" accept="application/json,.json" hidden>
+  <input type="file" id="model-file" accept=".glb,model/gltf-binary" hidden>
+  <script type="module" src="vendor/model-viewer.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

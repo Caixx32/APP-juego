@@ -28,7 +28,7 @@ function defaultState() {
   const task = (name, everyKm, everyMonths) => ({ id: uid(), name, everyKm, everyMonths, lastKm: null, lastDate: null });
   const doc = (name, notifyDays) => ({ id: uid(), name, expiry: '', notifyDays });
   return {
-    vehicle: { name: 'Mi auto', plate: '', km: 0 },
+    vehicle: { name: 'Mi auto', plate: '', km: 0, front: '+z' },
     tasks: [
       task('Aceite y filtro de aceite', 10000, 12),
       task('Filtro de aire', 20000, 24),
@@ -400,9 +400,28 @@ function renderCar() {
       <div class="actions"><button class="small" data-action="edit-car">Editar</button></div>
     </div>
 
+    <h2 class="section">Modelo 3D</h2>
+    <div class="card">
+      <div class="name">${v.modelName ? `🚗 ${esc(v.modelName)}` : '🚗 Auto genérico'}</div>
+      <div class="sub">${v.modelName
+        ? 'Tu modelo está guardado en este celular.'
+        : 'Cargá un archivo .glb de tu auto (por ejemplo, descargado de Sketchfab) para verlo en Inicio.'}</div>
+      <div class="actions">
+        <button class="small primary" data-action="load-model">⬆ Cargar modelo .glb</button>
+        ${v.modelName ? '<button class="small danger" data-action="remove-model">Quitar</button>' : ''}
+      </div>
+      <label class="field" style="margin:12px 0 0">
+        <span>Si los puntos quedan en el lugar equivocado, rotalos:</span>
+        <select id="front-select">
+          ${Object.entries(FRONT_OPTIONS).map(([k, label]) => `<option value="${k}" ${k === (v.front || '+z') ? 'selected' : ''}>${esc(label)}</option>`).join('')}
+        </select>
+        <small>El punto «Motor» tiene que quedar sobre el capó.</small>
+      </label>
+    </div>
+
     <h2 class="section">Copia de seguridad</h2>
     <div class="card">
-      <div class="sub">Los datos se guardan sólo en este celular. Exportá una copia de vez en cuando para no perderlos.</div>
+      <div class="sub">Los datos se guardan sólo en este celular. Exportá una copia de vez en cuando para no perderlos. (El modelo 3D no entra en la copia: guardá el .glb aparte.)</div>
       <div class="actions">
         <button class="small" data-action="export">⬇ Exportar</button>
         <button class="small" data-action="import">⬆ Importar</button>
@@ -414,14 +433,231 @@ function renderCar() {
       <button class="small danger" data-action="reset">Borrar todos los datos</button>
     </div>
   `;
+
+  document.getElementById('front-select').addEventListener('change', (ev) => {
+    state.vehicle.front = ev.target.value;
+    save();
+    placeHotspots();
+  });
 }
 
 const renderers = { home: renderHome, tasks: renderTasks, expenses: renderExpenses, docs: renderDocs, car: renderCar };
 
 function render() {
   renderHeader();
+  document.getElementById('stage').hidden = currentTab !== 'home';
   renderers[currentTab]();
+  updateHotspots();
 }
+
+/* ---------- Auto 3D ---------- */
+
+const DEFAULT_MODEL = 'models/auto.glb';
+const MAX_MODEL_MB = 40;
+
+// Puntos sobre el auto. Cada tarea va al primero cuyo nombre coincide; las demás y los papeles, al habitáculo.
+const SPOTS = [
+  { key: 'motor', label: 'Motor', match: /aceite|motor|correa|distribuci|buj[ií]a|filtro de aire|refrigerante|bater[ií]a|embrague/i },
+  { key: 'ruedas', label: 'Ruedas', match: /neum[aá]tico|rueda|cubierta|alineaci|balanceo|amortiguador|suspensi/i },
+  { key: 'frenos', label: 'Frenos', match: /fren|pastilla|disco/i },
+  { key: 'cabina', label: 'Habitáculo y papeles', match: null },
+];
+
+// Dónde va cada punto, en fracciones de la caja que ocupa el auto:
+// adelante (-0.5 cola … 0.5 trompa), costado (-0.5 … 0.5) y altura (0 piso … 1 techo).
+const SPOT_PLACES = {
+  motor: [0.36, 0, 0.62],
+  ruedas: [0.32, 0.5, 0.24],
+  frenos: [-0.32, -0.5, 0.24],
+  cabina: [-0.12, 0, 1.0],
+};
+
+const FRONT_OPTIONS = {
+  '+z': 'Normal',
+  '-z': 'Girado 180°',
+  '+x': 'Girado 90° a la derecha',
+  '-x': 'Girado 90° a la izquierda',
+};
+
+const mv = document.getElementById('car3d');
+const spotInfo = document.getElementById('spot-info');
+let selectedSpot = null;
+let customModelUrl = null;
+let staleModelUrl = null;
+
+function spotItems(key) {
+  const out = [];
+  for (const t of state.tasks) {
+    const spot = SPOTS.find((s) => s.match && s.match.test(t.name)) || SPOTS[SPOTS.length - 1];
+    if (spot.key === key) out.push({ icon: '🔧', name: t.name, st: taskStatus(t) });
+  }
+  if (key === 'cabina') {
+    for (const d of state.docs) out.push({ icon: '📄', name: d.name, st: docStatus(d) });
+  }
+  return out.sort((a, b) => levelOrder(a.st.level) - levelOrder(b.st.level));
+}
+
+function worstLevel(items) {
+  return items.reduce((worst, i) => (levelOrder(i.st.level) < levelOrder(worst) ? i.st.level : worst), items.length ? 'ok' : 'none');
+}
+
+function createHotspots() {
+  for (const s of SPOTS) {
+    const b = document.createElement('button');
+    b.className = 'hotspot unplaced';
+    b.slot = `hotspot-${s.key}`;
+    b.dataset.spot = s.key;
+    b.dataset.position = '0m 0m 0m';
+    b.dataset.visibilityAttribute = 'visible';
+    b.innerHTML = `<span class="dot"></span><span class="hs-label">${esc(s.label)}</span>`;
+    b.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      selectedSpot = selectedSpot === s.key ? null : s.key;
+      updateHotspots();
+    });
+    mv.appendChild(b);
+  }
+}
+
+function placeHotspots() {
+  if (!mv.loaded || !mv.getDimensions) return;
+  const dim = mv.getDimensions();
+  const c = mv.getBoundingBoxCenter();
+  const front = state.vehicle.front || '+z';
+  const sign = front[0] === '-' ? -1 : 1;
+  const alongZ = front[1] === 'z';
+  const length = alongZ ? dim.z : dim.x;
+  const width = alongZ ? dim.x : dim.z;
+  for (const s of SPOTS) {
+    const [fwd, side, up] = SPOT_PLACES[s.key];
+    const f = sign * fwd * length;
+    const l = sign * side * width;
+    const x = c.x + (alongZ ? l : f);
+    const z = c.z + (alongZ ? f : -l);
+    const y = c.y - dim.y / 2 + up * dim.y;
+    mv.updateHotspot({ name: `hotspot-${s.key}`, position: `${x}m ${y}m ${z}m` });
+    mv.querySelector(`[slot="hotspot-${s.key}"]`).classList.remove('unplaced');
+  }
+}
+
+function updateHotspots() {
+  for (const s of SPOTS) {
+    const el = mv.querySelector(`[slot="hotspot-${s.key}"]`);
+    if (!el) continue;
+    const level = worstLevel(spotItems(s.key));
+    el.classList.remove('ok', 'warn', 'bad', 'none');
+    el.classList.add(level);
+    el.classList.toggle('selected', selectedSpot === s.key);
+  }
+
+  if (!selectedSpot) {
+    spotInfo.hidden = true;
+    mv.setAttribute('auto-rotate', '');
+    return;
+  }
+  // Mientras se lee el detalle, el auto deja de girar.
+  mv.removeAttribute('auto-rotate');
+  const spot = SPOTS.find((s) => s.key === selectedSpot);
+  const items = spotItems(selectedSpot);
+  spotInfo.innerHTML = `
+    <div class="head"><b>${esc(spot.label)}</b><button class="small ghost" data-close-spot aria-label="Cerrar">✕</button></div>
+    ${items.map((i) => `
+      <div class="item">
+        <span>${i.icon}</span>
+        <div class="grow"><div>${esc(i.name)}</div><div class="sub">${esc(i.st.detail)}</div></div>
+        ${badge(i.st)}
+      </div>`).join('') || '<div class="sub">No hay nada cargado para esta parte.</div>'}
+  `;
+  spotInfo.hidden = false;
+}
+
+spotInfo.addEventListener('click', (ev) => {
+  if (!ev.target.closest('[data-close-spot]')) return;
+  selectedSpot = null;
+  updateHotspots();
+});
+
+mv.addEventListener('load', () => {
+  // La URL del modelo anterior se libera recién cuando el nuevo terminó de cargar.
+  if (staleModelUrl) URL.revokeObjectURL(staleModelUrl);
+  staleModelUrl = null;
+  placeHotspots();
+});
+
+mv.addEventListener('error', () => {
+  if (mv.getAttribute('src') === DEFAULT_MODEL) return;
+  alert('No se pudo abrir ese modelo 3D. Vuelvo a mostrar el auto genérico.');
+  removeCustomModel();
+});
+
+// El modelo propio se guarda en IndexedDB porque suele pesar varios MB (localStorage admite muy poco).
+function idb(mode, fn) {
+  return new Promise((resolve, reject) => {
+    const open = indexedDB.open('mi-auto', 1);
+    open.onupgradeneeded = () => open.result.createObjectStore('files');
+    open.onerror = () => reject(open.error);
+    open.onsuccess = () => {
+      const tx = open.result.transaction('files', mode);
+      const req = fn(tx.objectStore('files'));
+      tx.oncomplete = () => resolve(req && req.result);
+      tx.onerror = () => reject(tx.error);
+    };
+  });
+}
+
+async function loadModel() {
+  let blob = null;
+  try {
+    blob = await idb('readonly', (store) => store.get('model'));
+  } catch (e) {
+    blob = null;
+  }
+  if (customModelUrl) staleModelUrl = customModelUrl;
+  customModelUrl = blob ? URL.createObjectURL(blob) : null;
+  // setAttribute y no .src: el componente puede no estar definido todavía.
+  mv.setAttribute('src', customModelUrl || DEFAULT_MODEL);
+}
+
+async function saveCustomModel(file) {
+  if (!/\.glb$/i.test(file.name)) {
+    alert('Tiene que ser un archivo .glb (el formato .gltf con varios archivos no sirve).');
+    return;
+  }
+  if (file.size > MAX_MODEL_MB * 1024 * 1024) {
+    alert(`El archivo pesa ${Math.round(file.size / 1048576)} MB. Buscá una versión de menos de ${MAX_MODEL_MB} MB para que el celular no se trabe.`);
+    return;
+  }
+  try {
+    await idb('readwrite', (store) => store.put(file, 'model'));
+  } catch (e) {
+    alert('No hay espacio para guardar el modelo en este celular.');
+    return;
+  }
+  state.vehicle.modelName = file.name;
+  state.vehicle.front = '+z';
+  save();
+  await loadModel();
+  render();
+}
+
+async function removeCustomModel() {
+  try {
+    await idb('readwrite', (store) => store.delete('model'));
+  } catch (e) {
+    // Si no se puede borrar, igual se deja de mostrar.
+  }
+  delete state.vehicle.modelName;
+  state.vehicle.front = '+z';
+  save();
+  await loadModel();
+  render();
+}
+
+document.getElementById('model-file').addEventListener('change', (ev) => {
+  const file = ev.target.files[0];
+  ev.target.value = '';
+  if (file) saveCustomModel(file);
+});
 
 /* ---------- Formularios ---------- */
 
@@ -637,7 +873,10 @@ document.getElementById('import-file').addEventListener('change', async (ev) => 
     const data = JSON.parse(await file.text());
     if (!data || typeof data !== 'object' || !data.vehicle) throw new Error('formato');
     if (!confirm('Esto reemplaza todos los datos actuales por los del archivo. ¿Continuar?')) return;
+    const { modelName, front } = state.vehicle; // el modelo 3D no viaja en la copia
     state = normalize(data);
+    state.vehicle.modelName = modelName;
+    state.vehicle.front = front;
     save();
     render();
   } catch (e) {
@@ -659,13 +898,16 @@ const actions = {
   'add-doc': () => docForm(null),
   'edit-doc': (el) => docForm(find(state.docs, el.dataset.id)),
   'edit-car': () => carForm(),
+  'load-model': () => document.getElementById('model-file').click(),
+  'remove-model': () => {
+    if (confirm('¿Quitar tu modelo 3D y volver al auto genérico?')) removeCustomModel();
+  },
   export: () => exportData(),
   import: () => document.getElementById('import-file').click(),
   reset: () => {
     if (!confirm('¿Borrar TODOS los datos del auto? No se puede deshacer.')) return;
     state = defaultState();
-    save();
-    render();
+    removeCustomModel();
   },
 };
 
@@ -689,6 +931,8 @@ document.querySelector('.tabs').addEventListener('click', (ev) => {
 });
 
 document.getElementById('storage-warning').hidden = storageOk;
+createHotspots();
+loadModel();
 render();
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
