@@ -424,6 +424,7 @@ function renderTasks() {
     <div class="quick" style="margin-top:4px;margin-bottom:14px">
       <button class="btn primary" data-action="add-task">${icon('plus')}Nueva tarea</button>
     </div>
+    <div class="cards">
     ${items.map(({ t, st }) => `
       <div class="card glass">
         <div class="row">
@@ -442,6 +443,7 @@ function renderTasks() {
           <button class="btn small" data-action="edit-task" data-id="${t.id}">${icon('edit')}Editar</button>
         </div>
       </div>`).join('') || '<div class="card glass empty">No hay tareas. Agregá una con «Nueva tarea».</div>'}
+    </div>
   `;
 }
 
@@ -522,6 +524,7 @@ function renderDocs() {
     <div class="quick" style="margin-top:4px;margin-bottom:14px">
       <button class="btn primary" data-action="add-doc">${icon('plus')}Nuevo vencimiento</button>
     </div>
+    <div class="cards">
     ${items.map(({ d, st }) => `
       <div class="card glass tap" data-action="edit-doc" data-id="${d.id}" role="button" tabindex="0">
         <div class="row">
@@ -534,6 +537,7 @@ function renderDocs() {
           ${st.days == null ? badge(st) : `<div class="days ${st.level}"><b>${Math.abs(st.days)}</b><span>${st.days < 0 ? 'días vencido' : st.days === 1 ? 'día' : 'días'}</span></div>`}
         </div>
       </div>`).join('') || '<div class="card glass empty">No hay papeles cargados.</div>'}
+    </div>
   `;
 }
 
@@ -625,6 +629,7 @@ const renderers = { home: renderHome, tasks: renderTasks, expenses: renderExpens
 
 function render() {
   renderHero();
+  document.body.dataset.view = currentTab;
   document.getElementById('stage').hidden = currentTab !== 'home';
   renderers[currentTab]();
   updateHotspots();
