@@ -1,0 +1,29 @@
+rules_version = '2';
+
+// Reglas de Firestore para Mi Auto.
+// Sólo estas dos cuentas de Google pueden leer y escribir. Tienen que coincidir con allowedEmails de config.js.
+// Para usarlas: consola de Firebase → Firestore Database → pestaña «Reglas» → pegar todo esto → «Publicar».
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function permitido() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower() in [
+          'juanmarcospaterno@gmail.com',
+          'mail_de_tu_mujer@gmail.com'
+        ];
+    }
+
+    // Todo el garage compartido: datos del auto, service, gastos, papeles, multas y archivos.
+    match /garages/{garageId}/{documento=**} {
+      allow read, write: if permitido();
+    }
+
+    // Cualquier otra cosa queda cerrada.
+    match /{documento=**} {
+      allow read, write: if false;
+    }
+  }
+}

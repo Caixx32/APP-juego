@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Mi Auto</title>
-  <meta name="description" content="Controlá el mantenimiento, los gastos y los vencimientos de tu auto.">
+  <meta name="description" content="Controlá el mantenimiento, los gastos, las multas y los papeles de tu auto.">
   <meta name="theme-color" content="#0b0d10">
   <meta name="color-scheme" content="dark">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -20,6 +20,8 @@
     No se pueden guardar datos en este navegador (¿modo privado?). Lo que cargues se perderá al cerrar.
   </div>
 
+  <div id="alert-banner" class="alert-banner" role="alert" hidden></div>
+
   <section id="stage" class="hero" aria-label="Tu auto">
     <div class="hero-head">
       <div class="hero-title">
@@ -28,6 +30,7 @@
         <div class="hero-meta">
           <span id="plate" class="plate" hidden></span>
           <span id="hero-km"></span>
+          <span id="offline-chip" class="offline-chip" hidden>Sin conexión</span>
         </div>
       </div>
       <button id="status-pill" class="status-pill" type="button"></button>
@@ -81,9 +84,30 @@
     </form>
   </dialog>
 
+  <dialog id="sheet" class="sheet">
+    <div class="sheet-grip"></div>
+    <div id="sheet-body"></div>
+  </dialog>
+
+  <div id="auth-screen" class="auth-screen" hidden>
+    <div class="auth-card">
+      <div class="auth-logo"><img src="icons/icon-192.png" alt="" width="72" height="72"></div>
+      <div class="eyebrow">Mi Auto</div>
+      <h1 data-auth-title>Conectando…</h1>
+      <p class="sub" data-auth-text></p>
+      <div class="auth-spinner" aria-hidden="true"></div>
+      <button class="btn primary auth-btn" data-auth-login hidden><svg data-icon="google"></svg>Entrar con Google</button>
+      <button class="btn auth-btn" data-auth-retry hidden>Reintentar</button>
+    </div>
+  </div>
+
   <input type="file" id="import-file" accept="application/json,.json" hidden>
   <input type="file" id="model-file" accept=".glb,model/gltf-binary" hidden>
   <script type="module" src="vendor/model-viewer.min.js"></script>
+  <script src="config.js"></script>
+  <script src="cloud.js"></script>
+  <script src="store.js"></script>
+  <script src="charts.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
