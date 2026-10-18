@@ -16,6 +16,7 @@ const CATEGORIES = {
 };
 
 const CAR_COLORS = {
+  'Azul marino': '#1f3c88',
   'Azul': '#2f7bf5',
   'Celeste': '#3ea6ff',
   'Rojo': '#e0353b',
@@ -28,7 +29,7 @@ const CAR_COLORS = {
   'Gris oscuro': '#5b6573',
   'Negro': '#1b1e23',
 };
-const DEFAULT_COLOR = '#3ea6ff';
+const DEFAULT_COLOR = '#1f3c88';
 
 // Avisar cuando falte este margen para un vencimiento.
 const SOON_KM_RATIO = 0.1;
@@ -43,7 +44,7 @@ function defaultState() {
   const task = (name, everyKm, everyMonths) => ({ id: uid(), name, everyKm, everyMonths, lastKm: null, lastDate: null });
   const doc = (name, notifyDays) => ({ id: uid(), name, expiry: '', notifyDays });
   return {
-    vehicle: { name: 'Mi auto', plate: '', km: 0, front: '+z', color: DEFAULT_COLOR },
+    vehicle: { name: 'Mi auto', plate: '', km: 0, color: DEFAULT_COLOR },
     tasks: [
       task('Aceite y filtro de aceite', 10000, 12),
       task('Filtro de aire', 20000, 24),
@@ -165,7 +166,6 @@ function applyColor() {
   root.setProperty('--accent', `rgb(${rgb.join(',')})`);
   root.setProperty('--accent-rgb', rgb.join(', '));
   root.setProperty('--on-accent', luminance(rgb) > 0.45 ? '#0b0d10' : '#ffffff');
-  paintDefaultCar();
 }
 
 /* ---------- Utilidades ---------- */
@@ -561,7 +561,7 @@ function renderCar() {
     <div class="card glass">
       <div class="row">
         <div class="icon-bubble">${icon('palette')}</div>
-        <div class="grow"><div class="name">Color de tu auto</div><div class="sub">Pinta la app${v.modelName ? '' : ' y el auto genérico'}.</div></div>
+        <div class="grow"><div class="name">Color de tu auto</div><div class="sub">Pinta toda la app con el color que elijas.</div></div>
       </div>
       <div class="swatches">
         ${Object.entries(CAR_COLORS).map(([name, hex]) => `
@@ -577,8 +577,8 @@ function renderCar() {
       <div class="row">
         <div class="icon-bubble">${icon('cube')}</div>
         <div class="grow">
-          <div class="name">${v.modelName ? esc(v.modelName) : 'Auto genérico'}</div>
-          <div class="sub">${v.modelName ? 'Tu modelo está guardado en este celular.' : 'Cargá un .glb de tu auto (por ejemplo, de Sketchfab).'}</div>
+          <div class="name">${v.modelName ? esc(v.modelName) : 'Tu auto (incluido en la app)'}</div>
+          <div class="sub">${v.modelName ? 'Tu modelo está guardado en este celular.' : 'Viene incluido en la app. Si querés probar otro modelo, cargá un .glb.'}</div>
         </div>
       </div>
       <div class="actions">
@@ -588,7 +588,7 @@ function renderCar() {
       <label class="field" style="margin:16px 0 0">
         <span>Orientación de los puntos</span>
         <select id="front-select">
-          ${Object.entries(FRONT_OPTIONS).map(([k, label]) => `<option value="${k}" ${k === (v.front || '+z') ? 'selected' : ''}>${esc(label)}</option>`).join('')}
+          ${Object.entries(FRONT_OPTIONS).map(([k, label]) => `<option value="${k}" ${k === currentFront() ? 'selected' : ''}>${esc(label)}</option>`).join('')}
         </select>
         <small>El punto «Motor» tiene que quedar sobre el capó.</small>
       </label>
@@ -610,7 +610,7 @@ function renderCar() {
   `;
 
   document.getElementById('front-select').addEventListener('change', (ev) => {
-    state.vehicle.front = ev.target.value;
+    state.vehicle[frontKey()] = ev.target.value;
     save();
     placeHotspots();
   });
@@ -645,7 +645,18 @@ function goTo(tab) {
 
 /* ---------- Auto 3D ---------- */
 
-const DEFAULT_MODEL = 'models/auto.glb';
+const DEFAULT_MODEL = 'models/mi-auto.glb';
+// Hacia dónde mira la trompa del modelo incluido (en el archivo apunta hacia -X).
+const DEFAULT_FRONT = '-x';
+
+// La orientación se guarda por separado para el modelo incluido y para uno cargado desde el celular.
+function frontKey() {
+  return state.vehicle.modelName ? 'front' : 'defaultFront';
+}
+
+function currentFront() {
+  return state.vehicle[frontKey()] || (state.vehicle.modelName ? '+z' : DEFAULT_FRONT);
+}
 const MAX_MODEL_MB = 40;
 
 // Puntos sobre el auto. Cada tarea va al primero cuyo nombre coincide; las demás y los papeles, al habitáculo.
@@ -659,9 +670,9 @@ const SPOTS = [
 // Dónde va cada punto, en fracciones de la caja que ocupa el auto:
 // adelante (-0.5 cola … 0.5 trompa), costado (-0.5 … 0.5) y altura (0 piso … 1 techo).
 const SPOT_PLACES = {
-  motor: [0.36, 0, 0.62],
+  motor: [0.33, 0, 0.66],
   ruedas: [0.32, 0.5, 0.24],
-  frenos: [-0.32, -0.5, 0.24],
+  frenos: [-0.32, 0.5, 0.24],
   cabina: [-0.12, 0, 1.0],
 };
 
@@ -715,7 +726,7 @@ function placeHotspots() {
   if (!mv.loaded || !mv.getDimensions) return;
   const dim = mv.getDimensions();
   const c = mv.getBoundingBoxCenter();
-  const front = state.vehicle.front || '+z';
+  const front = currentFront();
   const sign = front[0] === '-' ? -1 : 1;
   const alongZ = front[1] === 'z';
   const length = alongZ ? dim.z : dim.x;
@@ -730,13 +741,6 @@ function placeHotspots() {
     mv.updateHotspot({ name: `hotspot-${s.key}`, position: `${x}m ${y}m ${z}m` });
     mv.querySelector(`[slot="hotspot-${s.key}"]`).classList.remove('unplaced');
   }
-}
-
-// El auto genérico toma el color elegido; un modelo propio conserva sus colores originales.
-function paintDefaultCar() {
-  if (!mv.loaded || !mv.model || mv.getAttribute('src') !== DEFAULT_MODEL) return;
-  const body = mv.model.materials.find((m) => m.name === 'Carroceria');
-  if (body) body.pbrMetallicRoughness.setBaseColorFactor(state.vehicle.color || DEFAULT_COLOR);
 }
 
 function updateHotspots() {
@@ -781,12 +785,11 @@ mv.addEventListener('load', () => {
   if (staleModelUrl) URL.revokeObjectURL(staleModelUrl);
   staleModelUrl = null;
   placeHotspots();
-  paintDefaultCar();
 });
 
 mv.addEventListener('error', () => {
   if (mv.getAttribute('src') === DEFAULT_MODEL) return;
-  alert('No se pudo abrir ese modelo 3D. Vuelvo a mostrar el auto genérico.');
+  alert('No se pudo abrir ese modelo 3D. Vuelvo a mostrar el auto de la app.');
   removeCustomModel();
 });
 
@@ -847,7 +850,7 @@ async function removeCustomModel() {
     // Si no se puede borrar, igual se deja de mostrar.
   }
   delete state.vehicle.modelName;
-  state.vehicle.front = '+z';
+  delete state.vehicle.front;
   save();
   await loadModel();
   render();
@@ -1082,10 +1085,9 @@ document.getElementById('import-file').addEventListener('change', async (ev) => 
     const data = JSON.parse(await file.text());
     if (!data || typeof data !== 'object' || !data.vehicle) throw new Error('formato');
     if (!confirm('Esto reemplaza todos los datos actuales por los del archivo. ¿Continuar?')) return;
-    const { modelName, front } = state.vehicle; // el modelo 3D no viaja en la copia
+    const { modelName, front, defaultFront } = state.vehicle; // el modelo 3D no viaja en la copia
     state = normalize(data);
-    state.vehicle.modelName = modelName;
-    state.vehicle.front = front;
+    Object.assign(state.vehicle, { modelName, front, defaultFront });
     save();
     applyColor();
     render();
@@ -1110,7 +1112,7 @@ const actions = {
   'edit-car': () => carForm(),
   'load-model': () => document.getElementById('model-file').click(),
   'remove-model': () => {
-    if (confirm('¿Quitar tu modelo 3D y volver al auto genérico?')) removeCustomModel();
+    if (confirm('¿Quitar este modelo 3D y volver al auto incluido en la app?')) removeCustomModel();
   },
   export: () => exportData(),
   import: () => document.getElementById('import-file').click(),

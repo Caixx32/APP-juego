@@ -1,6 +1,6 @@
 // Guarda la app en el celular para que abra sin internet.
 // Al cambiar cualquier archivo, subí este número para que los celulares bajen la versión nueva.
-const CACHE = 'mi-auto-v4';
+const CACHE = 'mi-auto-v5';
 const ASSETS = [
   './',
   'index.html',
@@ -11,7 +11,7 @@ const ASSETS = [
   'icons/icon-192.png',
   'icons/icon-512.png',
   'vendor/model-viewer.min.js',
-  'models/auto.glb',
+  'models/mi-auto.glb',
 ];
 
 self.addEventListener('install', (event) => {

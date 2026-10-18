@@ -5,18 +5,22 @@ App web para el celular que ayuda a controlar las cosas del auto:
 - **Service**: tareas de mantenimiento (aceite, filtros, correa, frenos…) que avisan por kilómetros, por tiempo o por lo que llegue primero.
 - **Gastos**: combustible, seguro, patente, reparaciones, etc. Muestra totales por mes y por categoría, y calcula el consumo (km/l).
 - **Papeles**: VTV, seguro, licencia y cualquier otro vencimiento, con aviso anticipado.
-- **Diseño**: estilo oscuro tipo app de auto premium. El color se elige en **Auto → Color** y pinta toda la app (y el auto genérico).
+- **Diseño**: estilo oscuro tipo app de auto premium. El color se elige en **Auto → Color** y pinta toda la app.
 - **Inicio**: tu auto en 3D (gira solo, se rota 360° con el dedo y se hace zoom), con puntos sobre el motor, las ruedas,
   los frenos y el habitáculo que se ponen amarillos o rojos según los avisos. Debajo, kilometraje, resumen de gastos y la
   lista de lo que está vencido o por vencer.
 
 ## Poner tu propio auto en 3D
 
-Hasta que cargues el tuyo se muestra un auto genérico (`models/auto.glb`, generado con `tools/make_car.py`).
+La app trae incluido el modelo `models/mi-auto.glb`. Para cambiarlo por otro en todos los dispositivos, reemplazá ese
+archivo (conviene achicarlo antes con `python3 tools/optimize_glb.py original.glb models/mi-auto.glb`) y, si la trompa
+del nuevo modelo no apunta hacia -X, ajustá `DEFAULT_FRONT` en `app.js`.
+
+Para probar otro modelo sólo en un dispositivo:
 
 1. Conseguí un modelo **.glb** de tu auto. En [Sketchfab](https://sketchfab.com) buscá marca y modelo, filtrá por
    *Downloadable* y descargalo en formato **glTF Binary (.glb)**. Mejor si pesa menos de 20 MB.
-2. En la app, pestaña **Auto → Modelo 3D → Cargar modelo .glb**. Queda guardado en el celular.
+2. En la app, pestaña **Auto → Modelo 3D → Cargar .glb**. Queda guardado en ese dispositivo.
 3. Si los puntos no quedan donde corresponde (el de «Motor» tiene que ir sobre el capó), cambiá la rotación en esa misma
    tarjeta.
 
@@ -45,9 +49,10 @@ y abrí <http://localhost:8000>.
 | Archivo | Qué hace |
 | --- | --- |
 | `index.html` | Estructura de la página |
-| `styles.css` | Estilos (modo claro y oscuro automático) |
+| `styles.css` | Estilos (celular y computadora) |
 | `app.js` | Toda la lógica y el guardado de datos |
 | `sw.js` | Permite usarla sin internet. Si cambiás algún archivo, subí el número de `CACHE` |
 | `manifest.webmanifest`, `icons/` | Nombre e ícono para instalarla |
 | `vendor/model-viewer.min.js` | Visor 3D [model-viewer](https://modelviewer.dev) 4.0.0 de Google (licencia Apache 2.0) |
-| `models/auto.glb`, `tools/make_car.py` | Auto genérico y el script que lo genera |
+| `models/mi-auto.glb` | Modelo 3D del auto que trae la app |
+| `tools/optimize_glb.py` | Achica un .glb recomprimiendo sus texturas |
