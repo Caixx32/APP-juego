@@ -5,6 +5,7 @@ App web para el celular que ayuda a controlar las cosas del auto:
 - **Service**: tareas de mantenimiento (aceite, filtros, correa, frenos…) que avisan por kilómetros, por tiempo o por lo que llegue primero.
 - **Gastos**: combustible, seguro, patente, reparaciones, etc. Muestra totales por mes y por categoría, y calcula el consumo (km/l).
 - **Papeles**: VTV, seguro, licencia y cualquier otro vencimiento, con aviso anticipado.
+- **Diseño**: estilo oscuro tipo app de auto premium. El color se elige en **Auto → Color** y pinta toda la app (y el auto genérico).
 - **Inicio**: tu auto en 3D (gira solo, se rota 360° con el dedo y se hace zoom), con puntos sobre el motor, las ruedas,
   los frenos y el habitáculo que se ponen amarillos o rojos según los avisos. Debajo, kilometraje, resumen de gastos y la
   lista de lo que está vencido o por vencer.

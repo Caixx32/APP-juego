@@ -5,8 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Mi Auto</title>
   <meta name="description" content="Controlá el mantenimiento, los gastos y los vencimientos de tu auto.">
-  <meta name="theme-color" content="#1f6feb">
+  <meta name="theme-color" content="#0b0d10">
+  <meta name="color-scheme" content="dark">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Mi Auto">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
@@ -14,56 +16,67 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header class="topbar">
-    <h1 id="title">Mi Auto</h1>
-    <span id="plate" class="plate" hidden></span>
-  </header>
-
   <div id="storage-warning" class="banner" hidden>
     No se pueden guardar datos en este navegador (¿modo privado?). Lo que cargues se perderá al cerrar.
   </div>
 
-  <section id="stage" class="stage" aria-label="Tu auto en 3D">
-    <model-viewer id="car3d"
-      camera-controls
-      disable-pan
-      touch-action="pan-y"
-      auto-rotate
-      auto-rotate-delay="2500"
-      rotation-per-second="18deg"
-      interaction-prompt="none"
-      camera-orbit="-35deg 72deg 105%"
-      min-camera-orbit="auto 20deg auto"
-      max-camera-orbit="auto 88deg auto"
-      environment-image="neutral"
-      exposure="1.1"
-      shadow-intensity="1.3"
-      shadow-softness="0.9">
-      <div slot="progress-bar"></div>
-    </model-viewer>
-    <div class="stage-hint">👆 Girá el auto con el dedo · tocá un punto para ver el detalle</div>
-    <div id="spot-info" class="spot-info" hidden></div>
+  <section id="stage" class="hero" aria-label="Tu auto">
+    <div class="hero-head">
+      <div class="hero-title">
+        <div class="eyebrow">Mi garage</div>
+        <h1 id="car-name">Mi auto</h1>
+        <div class="hero-meta">
+          <span id="plate" class="plate" hidden></span>
+          <span id="hero-km"></span>
+        </div>
+      </div>
+      <button id="status-pill" class="status-pill" type="button"></button>
+    </div>
+
+    <div class="viewer">
+      <model-viewer id="car3d"
+        camera-controls
+        disable-pan
+        touch-action="pan-y"
+        auto-rotate
+        auto-rotate-delay="2500"
+        rotation-per-second="14deg"
+        interaction-prompt="none"
+        camera-orbit="-35deg 72deg 125%"
+        min-camera-orbit="auto 25deg auto"
+        max-camera-orbit="auto 86deg auto"
+        environment-image="neutral"
+        exposure="1.15"
+        shadow-intensity="1.6"
+        shadow-softness="0.7">
+        <div slot="progress-bar"></div>
+      </model-viewer>
+      <div class="viewer-hint">Deslizá para girar · tocá un punto</div>
+    </div>
+
+    <div id="spot-info" class="spot-info glass" hidden></div>
   </section>
 
   <main id="view"></main>
 
-  <nav class="tabs" aria-label="Secciones">
-    <button data-tab="home" class="active"><span>🏠</span>Inicio</button>
-    <button data-tab="tasks"><span>🔧</span>Service</button>
-    <button data-tab="expenses"><span>💸</span>Gastos</button>
-    <button data-tab="docs"><span>📄</span>Papeles</button>
-    <button data-tab="car"><span>🚗</span>Auto</button>
+  <nav class="tabs glass" aria-label="Secciones">
+    <button data-tab="home" class="active"><svg data-icon="home"></svg><span>Inicio</span></button>
+    <button data-tab="tasks"><svg data-icon="wrench"></svg><span>Service</span></button>
+    <button data-tab="expenses"><svg data-icon="wallet"></svg><span>Gastos</span></button>
+    <button data-tab="docs"><svg data-icon="doc"></svg><span>Papeles</span></button>
+    <button data-tab="car"><svg data-icon="car"></svg><span>Auto</span></button>
   </nav>
 
   <dialog id="modal">
     <form id="modal-form" method="dialog">
+      <div class="sheet-grip"></div>
       <h2 id="modal-title"></h2>
       <div id="modal-fields"></div>
       <div class="modal-actions">
-        <button type="button" id="modal-delete" class="danger" hidden>Eliminar</button>
+        <button type="button" id="modal-delete" class="btn danger" hidden>Eliminar</button>
         <span class="spacer"></span>
-        <button type="button" id="modal-cancel" class="ghost">Cancelar</button>
-        <button type="submit" class="primary">Guardar</button>
+        <button type="button" id="modal-cancel" class="btn ghost">Cancelar</button>
+        <button type="submit" class="btn primary">Guardar</button>
       </div>
     </form>
   </dialog>

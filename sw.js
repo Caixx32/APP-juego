@@ -1,6 +1,6 @@
 // Guarda la app en el celular para que abra sin internet.
 // Al cambiar cualquier archivo, subí este número para que los celulares bajen la versión nueva.
-const CACHE = 'mi-auto-v2';
+const CACHE = 'mi-auto-v3';
 const ASSETS = [
   './',
   'index.html',
