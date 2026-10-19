@@ -1,6 +1,6 @@
 // Guarda la app en el dispositivo para que abra sin internet y manda avisos en segundo plano.
 // Al cambiar cualquier archivo, subí este número para que los dispositivos bajen la versión nueva.
-const CACHE = 'mi-auto-v8';
+const CACHE = 'mi-auto-v9';
 const ASSETS = [
   './',
   'index.html',
@@ -63,8 +63,10 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== location.origin) return;
 
   // Archivos de la app: primero la red (para recibir cambios); si no hay conexión, lo guardado.
+  // «no-cache» obliga a preguntarle al servidor si hay versión nueva: GitHub Pages deja que el navegador
+  // guarde los archivos 10 minutos y, sin esto, el celular podía seguir con el código viejo.
   event.respondWith(
-    fetch(request)
+    fetch(request, { cache: 'no-cache' })
       .then((response) => {
         if (response.ok) {
           const copy = response.clone();

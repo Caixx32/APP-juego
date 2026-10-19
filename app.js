@@ -544,11 +544,15 @@ function renderCar() {
       </div>
     </div>
 
+    <div class="sub app-version" id="app-version" style="margin:18px 4px 0">Versión de la app: …</div>
+
     <div class="section-title">Zona peligrosa</div>
     <div class="card glass">
       <button class="btn small danger" data-action="reset">${icon('trash')}Borrar todos los datos</button>
     </div>
   `;
+
+  showAppVersion();
 
   document.getElementById('front-select').addEventListener('change', (ev) => {
     device[frontKey()] = ev.target.value;
@@ -557,6 +561,18 @@ function renderCar() {
   });
   document.getElementById('custom-color').addEventListener('input', (ev) => setColor(ev.target.value, false));
   document.getElementById('custom-color').addEventListener('change', (ev) => setColor(ev.target.value));
+}
+
+// La versión es el nombre de la caché del service worker (mi-auto-vN): sirve para saber si el celular ya actualizó.
+async function showAppVersion() {
+  const el = document.getElementById('app-version');
+  if (!el || !('caches' in window)) return;
+  try {
+    const v = (await caches.keys()).filter((k) => /^mi-auto-v\d+$/.test(k)).map((k) => Number(k.split('-v')[1])).sort((a, b) => b - a)[0];
+    el.textContent = v ? `Versión de la app: ${v}` : 'Versión de la app: sin instalar todavía';
+  } catch (e) {
+    el.textContent = '';
+  }
 }
 
 function setColor(hex, rerender = true) {
@@ -1725,6 +1741,24 @@ createHotspots();
 if (MiAutoCloud.configured) startCloud();
 else startLocal();
 
+// Actualizaciones: cuando se publica una versión nueva, la app la baja y se recarga sola una vez.
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+  let hasController = !!navigator.serviceWorker.controller;
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    // La primera instalación no recarga; sólo el cambio de una versión a otra.
+    if (!hasController) {
+      hasController = true;
+      return;
+    }
+    if (reloading) return;
+    reloading = true;
+    location.reload();
+  });
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((reg) => {
+    // Al volver a la app desde segundo plano también se fija si hay versión nueva.
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') reg.update().catch(() => {});
+    });
+  }).catch(() => {});
 }
