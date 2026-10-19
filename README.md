@@ -44,7 +44,7 @@ Sin este paso la app funciona igual, pero guarda todo sólo en el dispositivo.
    Copiá el objeto `firebaseConfig` que aparece.
 7. Editá [`config.js`](config.js): pegá ese objeto en `firebase:` y completá el mail de la segunda cuenta en
    `allowedEmails`. Tiene que ser el mismo que pusiste en las reglas.
-8. Subí el número de `CACHE` en `sw.js` (por ejemplo de `mi-auto-v6` a `mi-auto-v7`) para que los celulares bajen la
+8. Subí el número de `CACHE` en `sw.js` (por ejemplo de `mi-auto-v7` a `mi-auto-v8`) para que los celulares bajen la
    versión nueva, y guardá los cambios en `main`.
 
 El plan gratuito (Spark) alcanza: no se usa Firebase Storage. Las fotos se comprimen en el navegador (máx. 1600 px,

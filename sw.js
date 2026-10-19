@@ -1,6 +1,6 @@
 // Guarda la app en el dispositivo para que abra sin internet y manda avisos en segundo plano.
 // Al cambiar cualquier archivo, subí este número para que los dispositivos bajen la versión nueva.
-const CACHE = 'mi-auto-v6';
+const CACHE = 'mi-auto-v7';
 const ASSETS = [
   './',
   'index.html',

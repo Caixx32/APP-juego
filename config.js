@@ -8,16 +8,14 @@
 // Estos datos no son secretos: la seguridad la ponen las reglas de Firestore, no esta clave.
 
 window.MI_AUTO_CONFIG = {
-  firebase: null,
-  // Ejemplo de cómo tiene que quedar:
-  // firebase: {
-  //   apiKey: 'AIza...',
-  //   authDomain: 'mi-auto-xxxx.firebaseapp.com',
-  //   projectId: 'mi-auto-xxxx',
-  //   storageBucket: 'mi-auto-xxxx.appspot.com',
-  //   messagingSenderId: '1234567890',
-  //   appId: '1:1234567890:web:abcdef',
-  // },
+  firebase: {
+    apiKey: 'AIzaSyAvnm6ovZO2eRvx7nuvYB80jWy4Q5qMb-o',
+    authDomain: 'mi-auto-20c27.firebaseapp.com',
+    projectId: 'mi-auto-20c27',
+    storageBucket: 'mi-auto-20c27.firebasestorage.app',
+    messagingSenderId: '653500972301',
+    appId: '1:653500972301:web:d81cde1d849265301b0444',
+  },
 
   allowedEmails: [
     'juanmarcospaterno@gmail.com',
