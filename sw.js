@@ -1,6 +1,6 @@
 // Guarda la app en el dispositivo para que abra sin internet y manda avisos en segundo plano.
 // Al cambiar cualquier archivo, subí este número para que los dispositivos bajen la versión nueva.
-const CACHE = 'mi-auto-v7';
+const CACHE = 'mi-auto-v8';
 const ASSETS = [
   './',
   'index.html',
@@ -15,7 +15,8 @@ const ASSETS = [
   'icons/icon-192.png',
   'icons/icon-512.png',
   'vendor/model-viewer.min.js',
-  'models/mi-auto.glb',
+  'models/baic-x55.glb',
+  'models/baic-x55-brillo.webp',
 ];
 
 // SDK de Firebase por CDN: se guarda aparte para que la app abra sin señal.

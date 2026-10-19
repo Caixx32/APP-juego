@@ -146,13 +146,15 @@ model-viewer {
 
 /* Puntos sobre el auto */
 .hotspot {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  /* model-viewer centra el botón sobre el punto 3D: el botón mide lo mismo que el punto
+     y la etiqueta cuelga a la derecha, así el punto cae justo en su lugar. */
+  position: relative;
+  display: block;
+  width: 26px;
+  height: 26px;
   padding: 0;
   border: 0;
   background: transparent;
-  transform: translate(-9px, -50%);
   transition: opacity .3s;
   cursor: pointer;
 }
@@ -160,8 +162,10 @@ model-viewer {
 .hotspot.unplaced { display: none; }
 .hotspot .dot {
   position: relative;
-  width: 18px;
-  height: 18px;
+  display: block;
+  box-sizing: border-box;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background: rgba(255, 255, 255, .9);
   border: 4px solid rgba(11, 13, 16, .55);
@@ -184,6 +188,10 @@ model-viewer {
 .hotspot.warn .dot::after { color: var(--warn); }
 .hotspot.bad .dot::after { color: var(--bad); animation-duration: 1.2s; }
 .hotspot .hs-label {
+  position: absolute;
+  left: 32px;
+  top: 50%;
+  transform: translateY(-50%);
   font: 600 .7rem var(--font);
   letter-spacing: .02em;
   color: var(--text);

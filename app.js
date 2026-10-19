@@ -603,9 +603,16 @@ function goTo(tab) {
 
 /* ---------- Auto 3D ---------- */
 
-const DEFAULT_MODEL = 'models/mi-auto.glb';
-// Hacia dónde mira la trompa del modelo incluido (en el archivo apunta hacia -X).
-const DEFAULT_FRONT = '-x';
+const DEFAULT_MODEL = 'models/baic-x55.glb';
+// Hacia dónde mira la trompa del modelo incluido (en el archivo apunta hacia +Z).
+const DEFAULT_FRONT = '+z';
+/*
+ * El BAIC X55 trae un solo material para todo el auto, así que el brillo de cada parte sale de su textura
+ * metallicRoughness (G = rugosidad, B = metalicidad). Este mapa la reemplaza por zonas: carrocería con
+ * rugosidad 0,4 y metalicidad 0,3, vidrios lisos (0,05) y gomas y plásticos mate (0,85, sin metal).
+ * Se genera con tools/brillo a partir de los colores del atlas y de la forma del auto.
+ */
+const DEFAULT_FINISH = 'models/baic-x55-brillo.webp';
 
 // La orientación se guarda por separado para el modelo incluido y para uno cargado en el dispositivo.
 function frontKey() {
@@ -627,10 +634,11 @@ const SPOTS = [
 
 // Dónde va cada punto, en fracciones de la caja que ocupa el auto:
 // adelante (-0.5 cola … 0.5 trompa), costado (-0.5 … 0.5) y altura (0 piso … 1 techo).
+// Medido sobre el BAIC X55: ejes al 31 % adelante y 29 % atrás, gomas al 42 % del ancho (los espejos ensanchan la caja).
 const SPOT_PLACES = {
   motor: [0.33, 0, 0.66],
-  ruedas: [0.32, 0.5, 0.24],
-  frenos: [-0.32, 0.5, 0.24],
+  ruedas: [0.31, 0.42, 0.2],
+  frenos: [-0.29, 0.42, 0.2],
   cabina: [-0.12, 0, 1.0],
 };
 
@@ -739,11 +747,28 @@ spotInfo.addEventListener('click', (ev) => {
   updateHotspots();
 });
 
+// Ajusta el brillo del modelo incluido con la API de materiales de model-viewer (no cambia su color).
+async function applyDefaultFinish() {
+  if (mv.getAttribute('src') !== DEFAULT_MODEL || !mv.model) return;
+  try {
+    const finish = await mv.createTexture(DEFAULT_FINISH);
+    for (const mat of mv.model.materials) {
+      const pbr = mat.pbrMetallicRoughness;
+      pbr.metallicRoughnessTexture.setTexture(finish);
+      pbr.setRoughnessFactor(1);
+      pbr.setMetallicFactor(1);
+    }
+  } catch (e) {
+    // Sin el mapa (por ejemplo, sin internet la primera vez) el auto se ve con el brillo original.
+  }
+}
+
 mv.addEventListener('load', () => {
   // La URL del modelo anterior se libera recién cuando el nuevo terminó de cargar.
   if (staleModelUrl) URL.revokeObjectURL(staleModelUrl);
   staleModelUrl = null;
   placeHotspots();
+  applyDefaultFinish();
 });
 
 mv.addEventListener('error', () => {

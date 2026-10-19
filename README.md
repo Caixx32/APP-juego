@@ -82,11 +82,26 @@ y abrí <http://localhost:8000>. Para probar la nube sin tocar el proyecto real 
 Firebase (`firebase emulators:start --only auth,firestore` con Firestore en el puerto 8081) y abrir
 <http://localhost:8000/?emu=1>.
 
-## Poner otro modelo 3D
+## El modelo 3D
 
-La app trae `models/mi-auto.glb`. Para cambiarlo en todos los dispositivos, reemplazá ese archivo (conviene achicarlo
-antes con `python3 tools/optimize_glb.py original.glb models/mi-auto.glb`) y, si la trompa del nuevo modelo no apunta
-hacia -X, ajustá `DEFAULT_FRONT` en `app.js`. Para probar uno sólo en un dispositivo: **Auto → Modelo 3D → Cargar .glb**.
+La app trae `models/baic-x55.glb` (BAIC X55, ~405.000 triángulos, texturas WebP de 2048 px, 12 MB). Tiene un solo
+material, así que el brillo de cada parte lo da `models/baic-x55-brillo.webp`: un mapa por zonas (carrocería con
+rugosidad 0,4 y metalicidad 0,3, vidrios lisos, gomas y plásticos mate) que `app.js` aplica al cargar con la API de
+materiales de model-viewer, sin tocar el `.glb` ni su color. El visor usa `exposure="0.9"` y `tone-mapping="aces"`.
+
+Para regenerar el mapa de brillo (por ejemplo, con otro modelo de un solo material):
+
+```sh
+node tools/brillo/extraer.mjs models/baic-x55.glb /tmp/x55        # texturas y geometría (necesita @gltf-transform/core y extensions)
+python3 tools/brillo/mapas_geometria.py /tmp/x55                   # altura e inclinación de cada zona del atlas
+python3 tools/brillo/mapa_brillo.py /tmp/x55/texture_pbr_20250901.webp \
+  "/tmp/x55/texture_pbr_20250901_metallic-texture_pbr_20250901_roughness.webp" \
+  /tmp/x55/brillo.webp /tmp/x55/zonas.webp /tmp/x55/height.png /tmp/x55/normal_y.png
+```
+
+Si cambiás el modelo, ajustá en `app.js` `DEFAULT_MODEL`, `DEFAULT_FRONT` (hacia dónde mira la trompa; el X55 mira
+hacia +Z), `DEFAULT_FINISH` y, si hace falta, `SPOT_PLACES` (dónde van los puntos de alerta). Para probar un modelo sólo
+en un dispositivo: **Auto → Modelo 3D → Cargar .glb**.
 
 ## Archivos
 
@@ -103,5 +118,6 @@ hacia -X, ajustá `DEFAULT_FRONT` en `app.js`. Para probar uno sólo en un dispo
 | `firestore.rules` | Reglas de seguridad para pegar en la consola de Firebase |
 | `manifest.webmanifest`, `icons/` | Nombre e ícono para instalarla |
 | `vendor/model-viewer.min.js` | Visor 3D [model-viewer](https://modelviewer.dev) 4.0.0 de Google (licencia Apache 2.0) |
-| `models/mi-auto.glb` | Modelo 3D del auto que trae la app |
+| `models/baic-x55.glb`, `models/baic-x55-brillo.webp` | Modelo 3D del BAIC X55 y su mapa de brillo por zonas |
+| `tools/brillo/` | Scripts que generan el mapa de brillo |
 | `tools/optimize_glb.py` | Achica un .glb recomprimiendo sus texturas |
